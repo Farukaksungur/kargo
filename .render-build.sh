@@ -19,6 +19,12 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
+# Create SQLite database if not exists
+echo "🗄️ Creating SQLite database..."
+mkdir -p database
+touch database/database.sqlite
+chmod 664 database/database.sqlite
+
 # Run migrations
 echo "🗄️ Running database migrations..."
 php artisan migrate --force
