@@ -1,5 +1,5 @@
-# PHP 8.4 image kullan
-FROM php:8.4-fpm
+# Render için optimize edilmiş Dockerfile
+FROM php:8.4-cli
 
 # Sistem bağımlılıklarını yükleyelim
 RUN apt-get update && apt-get install -y \
@@ -8,26 +8,44 @@ RUN apt-get update && apt-get install -y \
     libfreetype6-dev \
     zip \
     git \
-    libzip-dev
+    libzip-dev \
+    sqlite3 \
+    libsqlite3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Composer'ı yükleyelim
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Laravel için gerekli PHP uzantılarını yükleyelim
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql zip
+    && docker-php-ext-install -j$(nproc) gd pdo pdo_mysql pdo_sqlite zip
 
 # Çalışma dizinini ayarla
 WORKDIR /var/www
 
-# Proje dosyalarını konteynerimize kopyalayalım
+# Proje dosyalarını kopyala
 COPY . .
 
-# Bağımlılıkları yükleyelim
-RUN composer install --no-dev --optimize-autoloader
+# Bağımlılıkları yükle
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
-# PHP-FPM ile servis çalıştır
-CMD ["php-fpm"]
+# SQLite database oluştur
+RUN mkdir -p database && touch database/database.sqlite && chmod 664 database/database.sqlite
 
-# Varsayılan port 80'i aç
-EXPOSE 80
+# Laravel cache'leri oluştur
+RUN php artisan config:cache || true
+RUN php artisan route:cache || true
+RUN php artisan view:cache || true
+
+# Migrations çalıştır (APP_KEY gerekebilir, bu yüzden || true)
+RUN php artisan migrate --force || true
+
+# Storage link oluştur
+RUN php artisan storage:link || true
+
+# Port'u dinle
+EXPOSE $PORT
+
+# Render'ın PORT environment variable'ını kullan
+CMD php artisan serve --host=0.0.0.0 --port=$PORT
+
