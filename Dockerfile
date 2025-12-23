@@ -29,5 +29,5 @@ RUN composer install --no-dev --optimize-autoloader
 # PHP-FPM ile servis çalıştır
 CMD ["php-fpm"]
 
-# Varsayılan port 9000'dir
-EXPOSE 9000
+# Varsayılan port 80'i aç
+EXPOSE 80
