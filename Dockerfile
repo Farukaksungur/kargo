@@ -32,16 +32,24 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction
 # SQLite database oluştur
 RUN mkdir -p database && touch database/database.sqlite && chmod 664 database/database.sqlite
 
-# Laravel cache'leri oluştur
-RUN php artisan config:cache || true
-RUN php artisan route:cache || true
-RUN php artisan view:cache || true
+# Storage ve cache klasörlerine yazma izni ver
+RUN mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache
+RUN chmod -R 775 storage bootstrap/cache
+RUN chown -R www-data:www-data storage bootstrap/cache || true
 
-# Migrations çalıştır (APP_KEY gerekebilir, bu yüzden || true)
-RUN php artisan migrate --force || true
+# APP_KEY oluştur (eğer yoksa)
+RUN php artisan key:generate --force || true
+
+# Laravel cache'leri oluştur (APP_KEY olmadan çalışmayabilir)
+RUN php artisan config:cache || echo "Config cache skipped"
+RUN php artisan route:cache || echo "Route cache skipped"
+RUN php artisan view:cache || echo "View cache skipped"
+
+# Migrations çalıştır
+RUN php artisan migrate --force || echo "Migrations skipped"
 
 # Storage link oluştur
-RUN php artisan storage:link || true
+RUN php artisan storage:link || echo "Storage link skipped"
 
 # Port'u dinle
 EXPOSE $PORT
