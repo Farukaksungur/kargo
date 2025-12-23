@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Docker files (Render için geçici olarak devre dışı)
+Dockerfile.backup
+docker-compose.yml.backup
