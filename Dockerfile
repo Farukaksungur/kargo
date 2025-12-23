@@ -1,27 +1,31 @@
-# PHP 8.0 image kullan
-FROM php:8.0-fpm
+# PHP 8.2 image kullanıyoruz
+FROM php:8.2-fpm
 
-# Sistem bağımlılıklarını yükle
-RUN apt-get update && apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev zip git
+# Sistem bağımlılıklarını yükleyelim (Laravel ve Composer için gerekli)
+RUN apt-get update && apt-get install -y \
+    libpng-dev \
+    libjpeg-dev \
+    libfreetype6-dev \
+    zip \
+    git \
+    libzip-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd pdo pdo_mysql zip
 
-# Composer'ı yükle
+# Composer'ı yükleyelim
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Laravel için gerekli PHP uzantılarını yükle
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd pdo pdo_mysql
-
-# Çalışma dizinini ayarla
+# Laravel projesinin bulunduğu dizine geçiş
 WORKDIR /var/www
 
-# Uygulama dosyalarını kopyala
+# Proje dosyalarını konteynerimize kopyalayalım
 COPY . .
 
-# Composer ile bağımlılıkları yükle
-RUN composer install
+# Bağımlılıkları yükleyelim
+RUN composer install --no-dev --optimize-autoloader
 
-# Apache veya Nginx ile servis çalıştırabiliriz, ancak Laravel için PHP-FPM ile çalışacağız
+# PHP-FPM çalıştırma komutunu ekleyelim
 CMD ["php-fpm"]
 
-# Varsayılan portu aç
+# Varsayılan port 9000'dir
 EXPOSE 9000
